@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">ReproductorMP3</string>
+    <string name="song">Song</string>
+    <string name="search_button">Search</string>
+    <string name="album_cover">Album cover</string>
+    <string name="artist">Artist</string>
+    <string name="play">Play and Pause</string>
+    <string name="next">Next song</string>
+    <string name="previous">Previous song</string>
+    <string name="lists">Listas</string>
+    <string name="songs">Canciones</string>
+    <string name="add">Agregar</string>
+    <string name="home">Ventana principal</string>
+</resources>

@@ -21,7 +21,7 @@ class SQLite(
         val performers = "CREATE TABLE performers (" +
                 "   id_performer          INTEGER PRIMARY KEY," +
                 "   id_type               INTEGER," +
-                "   name                  TEXT," +
+                "   performer_name                  TEXT," +
                 "   FOREIGN KEY (id_type) REFERENCES types(id_type)" +
                 ");"
         val persons = "CREATE TABLE persons (" +
@@ -33,14 +33,14 @@ class SQLite(
                 ");"
         val groups = "CREATE TABLE groups (" +
                 "   id_group              INTEGER PRIMARY KEY," +
-                "   name                  TEXT," +
+                "   group_name                  TEXT," +
                 "   start_date            TEXT," +
                 "   end_date              TEXT" +
                 ");"
         val albums = "CREATE TABLE albums (" +
                 "   id_album              INTEGER PRIMARY KEY," +
                 "   path                  TEXT," +
-                "   name                  TEXT," +
+                "   album_name            TEXT," +
                 "   year                  INTEGER" +
                 ");"
         val rolas = "CREATE TABLE rolas (" +
@@ -76,7 +76,7 @@ class SQLite(
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        TODO("Not yet implemented")
+
     }
 
 }

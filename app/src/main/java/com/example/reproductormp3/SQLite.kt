@@ -12,39 +12,39 @@ class SQLite(
 
     override fun onCreate(db: SQLiteDatabase?) {
         val types = "CREATE TABLE types (" +
-                "   id_type               INTEGER PRIMARY KEY," +
+                "   id_type               INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   description           TEXT" +
                 " );"
         val insertPerson = "INSERT INTO types VALUES(0, 'Person');"
         val insertGroup = "INSERT INTO types VALUES(1, 'Group');"
         val insertUnknown = "INSERT INTO types VALUES(2, 'Unknown');"
         val performers = "CREATE TABLE performers (" +
-                "   id_performer          INTEGER PRIMARY KEY," +
+                "   id_performer          INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   id_type               INTEGER," +
                 "   performer_name                  TEXT," +
                 "   FOREIGN KEY (id_type) REFERENCES types(id_type)" +
                 ");"
         val persons = "CREATE TABLE persons (" +
-                "   id_person             INTEGER PRIMARY KEY," +
+                "   id_person             INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   stage_name            TEXT," +
                 "   real_name             TEXT," +
                 "   birth_date            TEXT," +
                 "   death_date            TEXT" +
                 ");"
         val groups = "CREATE TABLE groups (" +
-                "   id_group              INTEGER PRIMARY KEY," +
+                "   id_group              INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   group_name                  TEXT," +
                 "   start_date            TEXT," +
                 "   end_date              TEXT" +
                 ");"
         val albums = "CREATE TABLE albums (" +
-                "   id_album              INTEGER PRIMARY KEY," +
+                "   id_album              INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   path                  TEXT," +
                 "   album_name            TEXT," +
                 "   year                  INTEGER" +
                 ");"
         val rolas = "CREATE TABLE rolas (" +
-                "   id_rola               INTEGER PRIMARY KEY," +
+                "   id_rola               INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   id_performer          INTEGER," +
                 "   id_album              INTEGER," +
                 "   path                  TEXT," +

@@ -3,6 +3,8 @@ package com.example.reproductormp3
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -15,7 +17,7 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    val player = MediaPlayer()
+    private val player = MediaPlayer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,33 +32,26 @@ class MainActivity : AppCompatActivity() {
         val artist: TextView = findViewById(R.id.artist)
         val cover: ImageView = findViewById(R.id.albumCover)
         val seek: SeekBar = findViewById(R.id.seekBar)
+        val canciones: Button = findViewById(R.id.songsButton)
+
+        artist.isSelected = true
+        song.isSelected = true
 
         val db = creaBase()
-        val lector = Lector()
-        val columnas = mutableListOf("title", "album_name", "performer_name",
-            "rolas.year", "genre", "rolas.path")
-        val tablas = mutableListOf("rolas", "albums", "performers")
-        val criterios = mapOf("rolas.id_album" to "albums.id_album",
-            "rolas.id_performer" to "performers.id_performer")
-        var cursor = lector.busca(tablas, columnas, criterios, db)
-        var hayCanciones = cursor.moveToNext()
-        Log.d("songs", cursor.count.toString())
-        if (hayCanciones) {
-            player.setDataSource(
-                cursor.getString(cursor.getColumnIndexOrThrow("path"))
-            )
-            player.prepare()
-        }
 
-        solicitaPermiso()
+        var cursor = Lector.busca(db)
 
-        actualiza(cover)
+        actualiza(cursor, player)
+        actualiza(cursor, cover)
         actualiza(cursor, song, artist)
 
         startSeek(seek)
 
+        var hayCanciones = cursor.moveToNext()
+
+        solicitaPermiso()
+
         addBtn.setOnClickListener {
-            creaBase()
             val minero = Minero()
             val editText = EditText(this)
             val builder = AlertDialog.Builder(this)
@@ -68,18 +63,19 @@ class MainActivity : AppCompatActivity() {
                 ) { _, _ ->
                     if (editText.text.isNotEmpty()) {
                         minero.mina(editText.text.toString(), db)
+                        cursor = Lector.busca(db)
+                        hayCanciones = cursor.moveToNext()
+                        actualiza(cursor, player)
                     } else {
                         Toast.makeText(this@MainActivity,
-                                        "Falta el directorio",
-                                        Toast.LENGTH_LONG).show()
+                            "Falta el directorio",
+                            Toast.LENGTH_LONG).show()
                     }
                 }
                 setNegativeButton("Cancelar"
                 ) { _, _ ->
                 }
             }.create().show()
-            cursor = lector.busca(tablas, columnas, criterios, db)
-            hayCanciones = cursor.moveToNext()
         }
 
         playPauseBtn.setOnClickListener {
@@ -110,7 +106,7 @@ class MainActivity : AppCompatActivity() {
                         startSeek(seek)
                         player.start()
                     }
-                    actualiza(cover)
+                    actualiza(cursor, cover)
                     actualiza(cursor, song, artist)
                 }
                 else -> {
@@ -126,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                         startSeek(seek)
                         player.start()
                     }
-                    actualiza(cover)
+                    actualiza(cursor, cover)
                     actualiza(cursor, song, artist)
                 }
             }
@@ -146,7 +142,7 @@ class MainActivity : AppCompatActivity() {
                     startSeek(seek)
                     player.start()
                 }
-                actualiza(cover)
+                actualiza(cursor, cover)
                 actualiza(cursor, song, artist)
             } else {
                 cursor.moveToNext()
@@ -161,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                     startSeek(seek)
                     player.start()
                 }
-                actualiza(cover)
+                actualiza(cursor, cover)
                 actualiza(cursor, song, artist)
             }
         }
@@ -226,6 +222,17 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun actualiza(cursor: Cursor, player: MediaPlayer) {
+        if (cursor.count > 0) {
+            cursor.moveToFirst()
+            player.reset()
+            player.setDataSource(
+                cursor.getString(cursor.getColumnIndexOrThrow("path"))
+            )
+            player.prepare()
+        }
+    }
+
     private fun actualiza(cursor: Cursor, song: TextView, artist: TextView) {
         if (cursor.count > 0) {
             Log.d("count", cursor.count.toString())
@@ -236,7 +243,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun actualiza(cover: ImageView) {
+    private fun actualiza(cursor: Cursor, cover: ImageView) {
+        val mr = MediaMetadataRetriever()
+        mr.setDataSource(cursor.getString(cursor.getColumnIndexOrThrow("path")))
+        val byteArray = mr.embeddedPicture
+        val bitmap = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
+        cover.setImageBitmap(bitmap)
 
     }
 }

@@ -12,8 +12,7 @@ class Lector {
             if (bdd == null) {
                 throw IllegalArgumentException("la base de datos es nula")
             }
-            return bdd.rawQuery(
-                "SELECT title," +
+            return bdd.rawQuery("SELECT title," +
                         " album_name, " +
                         " performer_name, " +
                         " rolas.year, " +
@@ -21,10 +20,13 @@ class Lector {
                         " rolas.path FROM rolas" +
                         " JOIN albums" +
                         " JOIN performers ON" +
-                        " rolas.id_album = albums.id_album AND " +
+                        " rolas.id_album = albums.id_album AND" +
                         " rolas.id_performer = performers.id_performer",
-                emptyArray()
-            )
+                emptyArray())
+        }
+
+        fun busca(bdd: SQLiteDatabase?, string: String) {
+
         }
     }
 }

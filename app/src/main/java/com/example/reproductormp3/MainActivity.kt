@@ -1,9 +1,12 @@
 package com.example.reproductormp3
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -17,7 +20,8 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private val player = MediaPlayer()
+    private val player = Reproductor
+    private var db: SQLiteDatabase? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,22 +36,23 @@ class MainActivity : AppCompatActivity() {
         val artist: TextView = findViewById(R.id.artist)
         val cover: ImageView = findViewById(R.id.albumCover)
         val seek: SeekBar = findViewById(R.id.seekBar)
-        val canciones: Button = findViewById(R.id.songsButton)
+        val songsBtn: Button = findViewById(R.id.songsButton)
+
+        db = creaBase()
+        var cursor = Lector.busca(db)
+        var hayCanciones = cursor.moveToNext()
 
         artist.isSelected = true
         song.isSelected = true
 
-        val db = creaBase()
-
-        var cursor = Lector.busca(db)
-
-        actualiza(cursor, player)
-        actualiza(cursor, cover)
-        actualiza(cursor, song, artist)
+        if (hayCanciones) {
+            actualiza(cursor, player)
+            playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
+            actualiza(cursor, cover)
+            actualiza(cursor, song, artist)
+        }
 
         startSeek(seek)
-
-        var hayCanciones = cursor.moveToNext()
 
         solicitaPermiso()
 
@@ -64,8 +69,13 @@ class MainActivity : AppCompatActivity() {
                     if (editText.text.isNotEmpty()) {
                         minero.mina(editText.text.toString(), db)
                         cursor = Lector.busca(db)
-                        hayCanciones = cursor.moveToNext()
-                        actualiza(cursor, player)
+                        hayCanciones = cursor.moveToFirst()
+                        if (hayCanciones) {
+                            actualiza(cursor, player)
+                            playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
+                            actualiza(cursor, song, artist)
+                            actualiza(cursor, cover)
+                        }
                     } else {
                         Toast.makeText(this@MainActivity,
                             "Falta el directorio",
@@ -78,12 +88,19 @@ class MainActivity : AppCompatActivity() {
             }.create().show()
         }
 
+        songsBtn.setOnClickListener{
+            switchActs()
+
+        }
+
         playPauseBtn.setOnClickListener {
             if (hayCanciones) {
                 if (!player.isPlaying) {
                     player.start()
+                    playPauseBtn.setImageResource(R.drawable.ic_pause_1_1s_40px)
                 } else {
                     player.pause()
+                    playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
                 }
             }
         }
@@ -96,7 +113,8 @@ class MainActivity : AppCompatActivity() {
                 cursor.isFirst -> {
                     cursor.moveToLast()
                     if (hayCanciones) {
-                        if (player.isPlaying)
+                        val start = player.isPlaying
+                        if (start)
                             player.stop()
                         player.reset()
                         player.setDataSource(
@@ -104,7 +122,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         player.prepare()
                         startSeek(seek)
-                        player.start()
+                        if (start)
+                            player.start()
                     }
                     actualiza(cursor, cover)
                     actualiza(cursor, song, artist)
@@ -112,7 +131,8 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                     cursor.moveToPrevious()
                     if (hayCanciones) {
-                        if (player.isPlaying)
+                        val start = player.isPlaying
+                        if (start)
                             player.stop()
                         player.reset()
                         player.setDataSource(
@@ -120,7 +140,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         player.prepare()
                         startSeek(seek)
-                        player.start()
+                        if (start)
+                            player.start()
                     }
                     actualiza(cursor, cover)
                     actualiza(cursor, song, artist)
@@ -132,7 +153,8 @@ class MainActivity : AppCompatActivity() {
             if (cursor.isLast) {
                 cursor.moveToFirst()
                 if (hayCanciones) {
-                    if (player.isPlaying)
+                    val start = player.isPlaying
+                    if (start)
                         player.stop()
                     player.reset()
                     player.setDataSource(
@@ -140,14 +162,16 @@ class MainActivity : AppCompatActivity() {
                     )
                     player.prepare()
                     startSeek(seek)
-                    player.start()
+                    if (start)
+                        player.start()
                 }
                 actualiza(cursor, cover)
                 actualiza(cursor, song, artist)
             } else {
                 cursor.moveToNext()
                 if (hayCanciones) {
-                    if (player.isPlaying)
+                    val start = player.isPlaying
+                    if (start)
                         player.stop()
                     player.reset()
                     player.setDataSource(
@@ -155,7 +179,8 @@ class MainActivity : AppCompatActivity() {
                     )
                     player.prepare()
                     startSeek(seek)
-                    player.start()
+                    if (start)
+                        player.start()
                 }
                 actualiza(cursor, cover)
                 actualiza(cursor, song, artist)
@@ -166,15 +191,26 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) player.seekTo(progress)
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
-
             }
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-
             }
         })
+    }
+
+    private fun switchActs() {
+        val switchIntent = Intent(this, SongsActivity::class.java)
+        startActivity(switchIntent)
+    }
+
+    private fun creaBase(): SQLiteDatabase? {
+        val sqlite = SQLite(this, "musica", null, 1)
+        val db: SQLiteDatabase? = sqlite.writableDatabase
+        if (db == null)
+            Toast.makeText(this,
+                "Error al crear la base de datos",
+                Toast.LENGTH_LONG).show()
+        return db
     }
 
     private fun startSeek(seek: SeekBar) {
@@ -190,16 +226,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }, 0)
-    }
-
-    private fun creaBase(): SQLiteDatabase? {
-        val sqlite = SQLite(this, "musica", null, 1)
-        val db: SQLiteDatabase? = sqlite.writableDatabase
-        if (db == null)
-            Toast.makeText(this,
-                             "Error al crear la base de datos",
-                            Toast.LENGTH_LONG).show()
-        return db
     }
 
     private fun hayPermiso(): Boolean {
@@ -244,11 +270,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun actualiza(cursor: Cursor, cover: ImageView) {
-        val mr = MediaMetadataRetriever()
-        mr.setDataSource(cursor.getString(cursor.getColumnIndexOrThrow("path")))
-        val byteArray = mr.embeddedPicture
-        val bitmap = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
-        cover.setImageBitmap(bitmap)
-
+        if (cursor.count > 0) {
+            val mr = MediaMetadataRetriever()
+            mr.setDataSource(cursor.getString(cursor.getColumnIndexOrThrow("path")))
+            val byteArray = mr.embeddedPicture
+            val bitmap = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
+            cover.setImageBitmap(bitmap)
+        }
     }
 }

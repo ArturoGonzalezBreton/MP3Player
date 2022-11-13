@@ -80,3 +80,8 @@ class SQLite(
     }
 
 }
+
+
+
+///sdcard/Download/sampledata
+///storage/emulated/0/sampledata

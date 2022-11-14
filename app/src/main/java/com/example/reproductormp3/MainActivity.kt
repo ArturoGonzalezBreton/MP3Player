@@ -1,18 +1,20 @@
 package com.example.reproductormp3
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.Icon
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.widget.*
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -20,38 +22,53 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private val player = Reproductor
+    private val player = MediaPlayer()
     private var db: SQLiteDatabase? = null
+    private lateinit var cursor: Cursor
+    private lateinit var song: TextView
+    private lateinit var addBtn: ImageButton
+    private lateinit var playPauseBtn: ImageButton
+    private lateinit var prevBtn: ImageButton
+    private lateinit var nextBtn: ImageButton
+    private lateinit var artist: TextView
+    private lateinit var cover: ImageView
+    private lateinit var seek: SeekBar
+    private lateinit var songsBtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val song: TextView = findViewById(R.id.songName)
-        val addBtn: ImageButton = findViewById(R.id.addButton)
-        val playPauseBtn: ImageButton = findViewById(R.id.playButton)
-        val prevBtn: ImageButton = findViewById(R.id.previousButton)
-        val nextBtn: ImageButton = findViewById(R.id.nextButton)
-        val artist: TextView = findViewById(R.id.artist)
-        val cover: ImageView = findViewById(R.id.albumCover)
-        val seek: SeekBar = findViewById(R.id.seekBar)
-        val songsBtn: Button = findViewById(R.id.songsButton)
+        song = findViewById(R.id.songName)
+        addBtn = findViewById(R.id.addButton)
+        playPauseBtn = findViewById(R.id.playButton)
+        prevBtn = findViewById(R.id.previousButton)
+        nextBtn = findViewById(R.id.nextButton)
+        artist = findViewById(R.id.artist)
+        cover = findViewById(R.id.albumCover)
+        seek = findViewById(R.id.seekBar)
+        songsBtn = findViewById(R.id.songsButton)
 
         db = creaBase()
-        var cursor = Lector.busca(db)
+        cursor = Lector.busca(db)
         var hayCanciones = cursor.moveToNext()
+
+        val register = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()) { result ->
+            onActivityResult(result)
+        }
 
         artist.isSelected = true
         song.isSelected = true
 
         if (hayCanciones) {
-            actualiza(cursor, player)
+            actualizaReproductor()
             playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
-            actualiza(cursor, cover)
-            actualiza(cursor, song, artist)
+            actualizaPortada()
+            actualizaInfo()
         }
 
-        startSeek(seek)
+        startSeek()
 
         solicitaPermiso()
 
@@ -70,10 +87,10 @@ class MainActivity : AppCompatActivity() {
                         cursor = Lector.busca(db)
                         hayCanciones = cursor.moveToFirst()
                         if (hayCanciones) {
-                            actualiza(cursor, player)
+                            actualizaReproductor()
                             playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
-                            actualiza(cursor, song, artist)
-                            actualiza(cursor, cover)
+                            actualizaInfo()
+                            actualizaPortada()
                         }
                     } else {
                         Toast.makeText(this@MainActivity,
@@ -88,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         songsBtn.setOnClickListener{
-            switchActs()
+            switchActs(register)
 
         }
 
@@ -96,11 +113,10 @@ class MainActivity : AppCompatActivity() {
             if (hayCanciones) {
                 if (!player.isPlaying) {
                     player.start()
-                    playPauseBtn.setImageResource(R.drawable.ic_pause_1_1s_40px)
                 } else {
                     player.pause()
-                    playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
                 }
+                actualizaPlayBtn()
             }
         }
 
@@ -120,12 +136,12 @@ class MainActivity : AppCompatActivity() {
                             cursor.getString(cursor.getColumnIndexOrThrow("path"))
                         )
                         player.prepare()
-                        startSeek(seek)
+                        startSeek()
                         if (start)
                             player.start()
                     }
-                    actualiza(cursor, cover)
-                    actualiza(cursor, song, artist)
+                    actualizaPortada()
+                    actualizaInfo()
                 }
                 else -> {
                     cursor.moveToPrevious()
@@ -138,12 +154,12 @@ class MainActivity : AppCompatActivity() {
                             cursor.getString(cursor.getColumnIndexOrThrow("path"))
                         )
                         player.prepare()
-                        startSeek(seek)
+                        startSeek()
                         if (start)
                             player.start()
                     }
-                    actualiza(cursor, cover)
-                    actualiza(cursor, song, artist)
+                    actualizaPortada()
+                    actualizaInfo()
                 }
             }
         }
@@ -160,12 +176,12 @@ class MainActivity : AppCompatActivity() {
                         cursor.getString(cursor.getColumnIndexOrThrow("path"))
                     )
                     player.prepare()
-                    startSeek(seek)
+                    startSeek()
                     if (start)
                         player.start()
                 }
-                actualiza(cursor, cover)
-                actualiza(cursor, song, artist)
+                actualizaPortada()
+                actualizaInfo()
             } else {
                 cursor.moveToNext()
                 if (hayCanciones) {
@@ -177,13 +193,28 @@ class MainActivity : AppCompatActivity() {
                         cursor.getString(cursor.getColumnIndexOrThrow("path"))
                     )
                     player.prepare()
-                    startSeek(seek)
+                    startSeek()
                     if (start)
                         player.start()
                 }
-                actualiza(cursor, cover)
-                actualiza(cursor, song, artist)
+                actualizaPortada()
+                actualizaInfo()
             }
+        }
+
+        player.setOnCompletionListener {
+            if (cursor.isLast)
+                cursor.moveToFirst()
+            else
+                cursor.moveToNext()
+            player.reset()
+            player.setDataSource(
+                cursor.getString(cursor.getColumnIndexOrThrow("path")))
+            player.prepare()
+            startSeek()
+            player.start()
+            actualizaPortada()
+            actualizaInfo()
         }
 
         seek.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
@@ -197,9 +228,31 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun switchActs() {
+    private fun switchActs(register: ActivityResultLauncher<Intent>) {
         val switchIntent = Intent(this, SongsActivity::class.java)
-        startActivity(switchIntent)
+        register.launch(switchIntent)
+    }
+
+    private fun onActivityResult(result: ActivityResult) {
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let {
+                val position: Int
+                val res = it.extras?.getInt("pos")
+                Log.d("position", res.toString())
+                if (res == null) {
+                    position = 0
+                } else {
+                    position = res
+                }
+                cursor.moveToPosition(position)
+                actualizaReproductor()
+                startSeek()
+                player.start()
+                actualizaPortada()
+                actualizaInfo()
+                actualizaPlayBtn()
+            }
+        }
     }
 
     private fun creaBase(): SQLiteDatabase? {
@@ -212,7 +265,7 @@ class MainActivity : AppCompatActivity() {
         return db
     }
 
-    private fun startSeek(seek: SeekBar) {
+    private fun startSeek() {
         seek.max = player.duration
         val handler = Handler()
         handler.postDelayed(object: Runnable {
@@ -247,9 +300,10 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun actualiza(cursor: Cursor, player: MediaPlayer) {
+    private fun actualizaReproductor() {
         if (cursor.count > 0) {
-            cursor.moveToFirst()
+            if (cursor.position < 0)
+                cursor.moveToFirst()
             player.reset()
             player.setDataSource(
                 cursor.getString(cursor.getColumnIndexOrThrow("path"))
@@ -258,23 +312,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun actualiza(cursor: Cursor, song: TextView, artist: TextView) {
+    private fun actualizaInfo() {
         if (cursor.count > 0) {
             Log.d("count", cursor.count.toString())
             song.text = cursor.getString(cursor.getColumnIndexOrThrow("title"))
             val text = cursor.getString(cursor.getColumnIndexOrThrow("album_name")) +
-                    ", " + cursor.getString(cursor.getColumnIndexOrThrow("performer_name"))
+                ", " + cursor.getString(cursor.getColumnIndexOrThrow("performer_name"))
             artist.text = text
         }
     }
 
-    private fun actualiza(cursor: Cursor, cover: ImageView) {
+    private fun actualizaPortada() {
         if (cursor.count > 0) {
             val mr = MediaMetadataRetriever()
             mr.setDataSource(cursor.getString(cursor.getColumnIndexOrThrow("path")))
             val byteArray = mr.embeddedPicture
             val bitmap = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
             cover.setImageBitmap(bitmap)
+        }
+    }
+
+    private fun actualizaPlayBtn() {
+        if (player.isPlaying) {
+            playPauseBtn.setImageResource(R.drawable.ic_pause_1_1s_40px)
+        } else {
+            playPauseBtn.setImageResource(R.drawable.ic_play_1_1s_40px)
         }
     }
 }

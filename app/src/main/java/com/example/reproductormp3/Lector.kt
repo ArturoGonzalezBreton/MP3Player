@@ -8,13 +8,17 @@ import android.database.sqlite.SQLiteDatabase
  */
 class Lector {
     companion object {
+
+        /**
+         * Busca todas las canciones sin aplicar filtros.
+         */
         fun busca(bdd: SQLiteDatabase?): Cursor {
             if (bdd == null) {
                 throw IllegalArgumentException("la base de datos es nula")
             }
             return bdd.rawQuery("SELECT title," +
-                        " album_name, " +
-                        " performer_name, " +
+                        " albums.name AS album_name, " +
+                        " performers.name AS performer_name, " +
                         " rolas.year, " +
                         " genre, " +
                         " rolas.path FROM rolas" +
@@ -25,12 +29,15 @@ class Lector {
                 emptyArray())
         }
 
+        /**
+         * Filtra las canciones de acuerdo a los filtros que ponga el usuario.
+         */
         fun busca(bdd: SQLiteDatabase?, busqueda: String): Cursor {
             if (bdd == null)
                 throw IllegalArgumentException("la base de datos es nula")
             var sql = "SELECT title," +
-                    " album_name, " +
-                    " performer_name, " +
+                    " albums.name AS album_name, " +
+                    " performers.name AS performer_name, " +
                     " rolas.year, " +
                     " genre, " +
                     " rolas.path FROM rolas" +
@@ -43,18 +50,19 @@ class Lector {
             } else {
                 val pattern = ";".toRegex()
                 val criterios = pattern.split(busqueda)
+
                 criterios.forEach {
                     when (it.substringBefore(":").trim()) {
                         "song", "title", "name" -> {
                             sql += " title LIKE '%${it.substringAfter(":").trim()}%'"
                         }
                         "year" -> {
-                            if (it.contains(">") ||
-                                it.contains("<") ||
-                                it.contains("=")) {
-                                sql += " rolas.year ${it.substringAfter(":").trim()}"
-                            } else {
-                                sql += " rolas.year = ${it.substringAfter(":").trim()}"
+                            sql += if (it.contains(">") ||
+                                        it.contains("<") ||
+                                        it.contains("=")) {
+                                        " rolas.year ${it.substringAfter(":").trim()}"
+                                    } else {
+                                        " rolas.year = ${it.substringAfter(":").trim()}"
                             }
                         }
                         "artist", "performer" -> {

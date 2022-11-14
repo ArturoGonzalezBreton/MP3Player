@@ -21,7 +21,7 @@ class SQLite(
         val performers = "CREATE TABLE performers (" +
                 "   id_performer          INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   id_type               INTEGER," +
-                "   performer_name                  TEXT," +
+                "   name        TEXT," +
                 "   FOREIGN KEY (id_type) REFERENCES types(id_type)" +
                 ");"
         val persons = "CREATE TABLE persons (" +
@@ -33,14 +33,14 @@ class SQLite(
                 ");"
         val groups = "CREATE TABLE groups (" +
                 "   id_group              INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "   group_name                  TEXT," +
+                "   name                  TEXT," +
                 "   start_date            TEXT," +
                 "   end_date              TEXT" +
                 ");"
         val albums = "CREATE TABLE albums (" +
                 "   id_album              INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "   path                  TEXT," +
-                "   album_name            TEXT," +
+                "   name            TEXT," +
                 "   year                  INTEGER" +
                 ");"
         val rolas = "CREATE TABLE rolas (" +

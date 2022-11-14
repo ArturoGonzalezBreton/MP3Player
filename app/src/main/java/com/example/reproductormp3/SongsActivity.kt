@@ -12,27 +12,29 @@ import androidx.appcompat.app.AppCompatActivity
 class SongsActivity : AppCompatActivity() {
 
     private var db: SQLiteDatabase? = null
+    private var items = mutableListOf<String>()
+    private lateinit var search: SearchView
+    private lateinit var list: ListView
+    private lateinit var homeBtn: ImageButton
+    private lateinit var adaptador: ArrayAdapter<String>
+    private lateinit var cursor: Cursor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_songs)
 
-        val search: SearchView = findViewById(R.id.searchView)
-        val list: ListView = findViewById(R.id.songList)
-        val homeBtn: ImageButton = findViewById(R.id.homeButton)
-        val items = mutableListOf<String>()
+        search = findViewById(R.id.searchView)
+        list = findViewById(R.id.songList)
+        homeBtn = findViewById(R.id.homeButton)
 
         db = SQLite(this, "musica", null, 1).writableDatabase
-        val cursor = Lector.busca(db)
+        cursor = Lector.busca(db)
         var searchCursor = Lector.busca(db)
-        val hayCanciones = cursor.moveToFirst()
 
-        val adaptador = ArrayAdapter(this, android.R.layout.simple_list_item_1, items)
+        adaptador = ArrayAdapter(this, android.R.layout.simple_list_item_1, items)
         list.adapter = adaptador
 
-        if (hayCanciones) {
-            actualiza(cursor, adaptador)
-        }
+        actualizaAdaptador(cursor)
 
         search.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -41,8 +43,8 @@ class SongsActivity : AppCompatActivity() {
                 } catch (sqle: SQLiteException) {
                     Toast.makeText(
                         this@SongsActivity,
-                        "Hint: song:Ich Will. &. year:>1990. +. " +
-                                "artist:Rammstein. &. album:Mutter. &. genre:Industrial Metal",
+                        "Hint: song:Ich Will; &; year:>1990; +; " +
+                                "artist:Rammstein; &; album:Mutter; &; genre:Industrial Metal",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -53,24 +55,24 @@ class SongsActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    actualiza(searchCursor, adaptador)
+                    actualizaAdaptador(searchCursor)
                 }
                 return true
             }
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (!search.query.contains(":"))
                 searchCursor = Lector.busca(db, search.query.toString())
-                actualiza(searchCursor, adaptador)
+                actualizaAdaptador(searchCursor)
                 return true
             }
         })
 
         search.setOnCloseListener {
-            actualiza(cursor, adaptador)
+            actualizaAdaptador(cursor)
             false
         }
 
-        list.setOnItemClickListener { parent, view, position, id ->
+        list.setOnItemClickListener { _, _, position, _ ->
             if (search.query.isNotEmpty()) {
                 cursor.moveToFirst()
                 val songToPlay = list.getItemAtPosition(position)
@@ -89,18 +91,18 @@ class SongsActivity : AppCompatActivity() {
         }
     }
 
-    private fun actualiza(cursor: Cursor, adapter: ArrayAdapter<String>) {
+    private fun actualizaAdaptador(cursor: Cursor) {
         if (cursor.count > 0) {
-            adapter.clear()
+            adaptador.clear()
             cursor.moveToFirst()
             do {
-                adapter.add(cursor.getString(cursor.getColumnIndexOrThrow("title")))
+                adaptador.add(cursor.getString(cursor.getColumnIndexOrThrow("title")))
             } while (cursor.moveToNext())
             cursor.moveToFirst()
-            adapter.notifyDataSetChanged()
+            adaptador.notifyDataSetChanged()
         } else {
-            adapter.clear()
-            adapter.notifyDataSetChanged()
+            adaptador.clear()
+            adaptador.notifyDataSetChanged()
         }
     }
 

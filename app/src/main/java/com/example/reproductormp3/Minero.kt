@@ -70,7 +70,8 @@ class Minero {
         if (bdd == null) {
             throw IllegalAccessException("La base de datos es nula")
         }
-        val cursor = bdd.rawQuery("SELECT * FROM performers WHERE performer_name='$artista'",null)
+        val cursor = bdd.rawQuery("SELECT * FROM performers WHERE " +
+                                    "name='$artista'",null)
         if (cursor.count > 0) {
             cursor.close()
             return true
@@ -86,7 +87,8 @@ class Minero {
         if (bdd == null) {
             throw IllegalAccessException("La base de datos es nula")
         }
-        val cursor = bdd.rawQuery("SELECT * FROM albums WHERE album_name='$album'",null)
+        val cursor = bdd.rawQuery("SELECT * FROM albums WHERE " +
+                                    "name='$album'",null)
         if (cursor.count > 0) {
             cursor.close()
             return true
@@ -134,7 +136,7 @@ class Minero {
         if (bdd == null) {
             throw IllegalAccessException("La base de datos es nula")
         }
-        bdd.execSQL("INSERT INTO albums (path, album_name, year) " +
+        bdd.execSQL("INSERT INTO albums (path, name, year) " +
                         "VALUES(null, '$album', $time)")
         if (album != null) {
             Log.d("album_insertions", album)
@@ -148,7 +150,7 @@ class Minero {
         if (bdd == null) {
             throw IllegalAccessException("La base de datos es nula")
         }
-        bdd.execSQL("INSERT INTO performers (id_type, performer_name) " +
+        bdd.execSQL("INSERT INTO performers (id_type, name) " +
                         "VALUES(2, '$artista')")
         if (artista != null) {
             Log.d("art_insertions", artista)
@@ -170,7 +172,7 @@ class Minero {
         }
 
         var cursor = bdd.rawQuery("SELECT id_performer FROM performers WHERE " +
-                                        "performer_name='$artist'", null)
+                                        "name='$artist'", null)
         var idPerformer: String?
         idPerformer = "null"
         //Log.d("ids_album", cursor.getString(cursor.getColumnIndexOrThrow("id_performer")))
@@ -179,7 +181,7 @@ class Minero {
         }
 
         cursor = bdd.rawQuery("SELECT id_album FROM albums WHERE " +
-                                    "album_name='$album'", null)
+                                    "name='$album'", null)
         var idAlbum: String?
         idAlbum = "null"
         //Log.d("ids_performer", cursor.getString(cursor.getColumnIndexOrThrow("id_album")))

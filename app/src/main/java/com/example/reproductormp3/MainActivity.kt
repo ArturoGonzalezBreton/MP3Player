@@ -22,9 +22,13 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
+    // Instancia de reproductor.
     private val player = MediaPlayer()
+    // Base de datos.
     private var db: SQLiteDatabase? = null
+    // Objeto que recorre los resultados de una consulta en la base de datos.
     private lateinit var cursor: Cursor
+
     private lateinit var song: TextView
     private lateinit var addBtn: ImageButton
     private lateinit var playPauseBtn: ImageButton
@@ -121,100 +125,67 @@ class MainActivity : AppCompatActivity() {
         }
 
         prevBtn.setOnClickListener {
-            when {
-                player.currentPosition > 4000 -> {
+            if (player.currentPosition > 4000) {
                     player.seekTo(0)
-                }
-                cursor.isFirst -> {
+            } else {
+                if (cursor.isFirst)
                     cursor.moveToLast()
-                    if (hayCanciones) {
-                        val start = player.isPlaying
-                        if (start)
-                            player.stop()
-                        player.reset()
-                        player.setDataSource(
-                            cursor.getString(cursor.getColumnIndexOrThrow("path"))
-                        )
-                        player.prepare()
-                        startSeek()
-                        if (start)
-                            player.start()
-                    }
-                    actualizaPortada()
-                    actualizaInfo()
-                }
-                else -> {
+                else
                     cursor.moveToPrevious()
-                    if (hayCanciones) {
-                        val start = player.isPlaying
-                        if (start)
-                            player.stop()
-                        player.reset()
-                        player.setDataSource(
-                            cursor.getString(cursor.getColumnIndexOrThrow("path"))
-                        )
-                        player.prepare()
-                        startSeek()
-                        if (start)
-                            player.start()
+                if (hayCanciones) {
+                    val start = player.isPlaying
+                    if (start)
+                        player.stop()
+                    player.reset()
+                    player.setDataSource(
+                        cursor.getString(cursor.getColumnIndexOrThrow("path")))
+                    player.prepare()
+                    startSeek()
+                    if (start)
+                        player.start()
                     }
-                    actualizaPortada()
-                    actualizaInfo()
-                }
+                actualizaPortada()
+                actualizaInfo()
             }
         }
 
         nextBtn.setOnClickListener {
-            if (cursor.isLast) {
-                cursor.moveToFirst()
-                if (hayCanciones) {
-                    val start = player.isPlaying
-                    if (start)
-                        player.stop()
-                    player.reset()
-                    player.setDataSource(
-                        cursor.getString(cursor.getColumnIndexOrThrow("path"))
-                    )
-                    player.prepare()
-                    startSeek()
-                    if (start)
-                        player.start()
-                }
-                actualizaPortada()
-                actualizaInfo()
-            } else {
-                cursor.moveToNext()
-                if (hayCanciones) {
-                    val start = player.isPlaying
-                    if (start)
-                        player.stop()
-                    player.reset()
-                    player.setDataSource(
-                        cursor.getString(cursor.getColumnIndexOrThrow("path"))
-                    )
-                    player.prepare()
-                    startSeek()
-                    if (start)
-                        player.start()
-                }
-                actualizaPortada()
-                actualizaInfo()
-            }
-        }
-
-        player.setOnCompletionListener {
             if (cursor.isLast)
                 cursor.moveToFirst()
             else
                 cursor.moveToNext()
-            player.reset()
-            player.setDataSource(
-                cursor.getString(cursor.getColumnIndexOrThrow("path")))
-            player.prepare()
-            startSeek()
-            player.start()
+            if (hayCanciones) {
+                val start = player.isPlaying
+                if (start)
+                    player.stop()
+                player.reset()
+                player.setDataSource(
+                    cursor.getString(cursor.getColumnIndexOrThrow("path")))
+                player.prepare()
+                startSeek()
+                if (start)
+                    player.start()
+                }
             actualizaPortada()
             actualizaInfo()
+        }
+
+        player.setOnCompletionListener {
+            if (hayCanciones) {
+                if (cursor.isLast)
+                    cursor.moveToFirst()
+                else
+                    cursor.moveToNext()
+                player.reset()
+                player.setDataSource(
+                    cursor.getString(cursor.getColumnIndexOrThrow("path"))
+                )
+                player.prepare()
+                startSeek()
+                player.start()
+                actualizaPortada()
+                actualizaInfo()
+            }
         }
 
         seek.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
@@ -228,22 +199,26 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * Método privado para cambiar a la actividad en donde se muestra
+     * la lista de canciones.
+     */
     private fun switchActs(register: ActivityResultLauncher<Intent>) {
         val switchIntent = Intent(this, SongsActivity::class.java)
         register.launch(switchIntent)
     }
 
+    /**
+     * Método privado que maneja el resultado que envíe la actividad
+     * de canciones al seleccionar una canción
+     */
     private fun onActivityResult(result: ActivityResult) {
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.let {
                 val position: Int
                 val res = it.extras?.getInt("pos")
                 Log.d("position", res.toString())
-                if (res == null) {
-                    position = 0
-                } else {
-                    position = res
-                }
+                position = res ?: 0
                 cursor.moveToPosition(position)
                 actualizaReproductor()
                 startSeek()
@@ -255,6 +230,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Crea la base de datos. Si ya existe, devuelve la existente.
+     */
     private fun creaBase(): SQLiteDatabase? {
         val sqlite = SQLite(this, "musica", null, 1)
         val db: SQLiteDatabase? = sqlite.writableDatabase
@@ -265,6 +243,9 @@ class MainActivity : AppCompatActivity() {
         return db
     }
 
+    /**
+     * Inicia la barra que indica el progreso de la reproducción.
+     */
     private fun startSeek() {
         seek.max = player.duration
         val handler = Handler()
@@ -280,6 +261,10 @@ class MainActivity : AppCompatActivity() {
         }, 0)
     }
 
+    /**
+     * Verifica si la aplicación tiene permiso para acceder al
+     * almacenamiento del dispositivo.
+     */
     private fun hayPermiso(): Boolean {
         val result = ContextCompat.checkSelfPermission(
             this@MainActivity,
@@ -289,6 +274,9 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    /**
+     * Solicita permiso para acceder al almacenamiento del dispositivo.
+     */
     private fun solicitaPermiso() {
         if (hayPermiso())
             return
@@ -300,6 +288,10 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Prepara el reproductor para comenzar a reproducir la canción a la que
+     * apunta el cursor.
+     */
     private fun actualizaReproductor() {
         if (cursor.count > 0) {
             if (cursor.position < 0)
@@ -312,6 +304,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Actualiza la información de la canción en la actividad principal.
+     */
     private fun actualizaInfo() {
         if (cursor.count > 0) {
             Log.d("count", cursor.count.toString())
@@ -322,6 +317,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Actualiza la la portada del álbum de la canción.
+     */
     private fun actualizaPortada() {
         if (cursor.count > 0) {
             val mr = MediaMetadataRetriever()
@@ -332,6 +330,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Actualiza la imagen del botón de pausa y play.
+     */
     private fun actualizaPlayBtn() {
         if (player.isPlaying) {
             playPauseBtn.setImageResource(R.drawable.ic_pause_1_1s_40px)

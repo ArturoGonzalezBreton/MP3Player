@@ -45,7 +45,7 @@
         android:id="@+id/seekBar"
         android:layout_width="323dp"
         android:layout_height="19dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="35dp"
         android:progressTint="#000000"
         app:layout_constraintBottom_toTopOf="@+id/playButton"
         app:layout_constraintEnd_toEndOf="parent"
@@ -57,7 +57,7 @@
         android:id="@+id/nextButton"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="49dp"
         android:layout_marginEnd="75dp"
         android:backgroundTint="#00FFFFFF"
         android:contentDescription="@string/next"
@@ -75,7 +75,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="75dp"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="49dp"
         android:backgroundTint="#00FFFFFF"
         android:contentDescription="@string/previous"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -88,36 +88,19 @@
         app:tint="#474747" />
 
     <Button
-        android:id="@+id/listsButton"
-        android:layout_width="150dp"
-        android:layout_height="0dp"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="15dp"
-        android:background="#00FFFFFF"
-        android:text="@string/lists"
-        android:textColor="#000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/nextButton"
-        app:layout_constraintVertical_bias="1.0" />
-
-    <Button
         android:id="@+id/songsButton"
         android:layout_width="150dp"
         android:layout_height="0dp"
-        android:layout_marginStart="15dp"
         android:layout_marginBottom="15dp"
         android:background="#00FFFFFF"
         android:text="@string/songs"
         android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/previousButton"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <ImageButton
         android:id="@+id/addButton"

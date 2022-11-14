@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val search: SearchView = findViewById(R.id.searchView)
         val song: TextView = findViewById(R.id.songName)
         val addBtn: ImageButton = findViewById(R.id.addButton)
         val playPauseBtn: ImageButton = findViewById(R.id.playButton)
